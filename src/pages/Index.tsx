@@ -524,56 +524,83 @@ export default function Index() {
         <div className="flex flex-1 min-h-0" style={{ minHeight: 480 }}>
 
           {/* Sidebar */}
-          <div className="w-[185px] flex-shrink-0 border-r border-[#e8f2fc] py-3 px-2 flex flex-col gap-0.5">
-            {/* Add event button */}
-            <button
-              onClick={addEvent}
-              className="flex items-center gap-2 px-3 py-2 mb-1 rounded-lg text-[13px] font-semibold text-white bg-[#4a9eed] hover:bg-[#3b8fde] transition-colors"
-            >
-              <Icon name="Plus" size={13} />
-              Добавить событие
-            </button>
+          <div className="w-[190px] flex-shrink-0 border-r border-[#e8f2fc] flex flex-col">
 
-            {/* Base settings */}
-            <button
-              onClick={() => setActive({ kind: "base" })}
-              className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                isActive({ kind: "base" })
-                  ? "bg-[#dbeeff] text-[#1a6ebd]"
-                  : "text-[#4a6280] hover:bg-[#f0f7ff]"
-              }`}
-            >
-              Базовые настройки
-            </button>
+            {/* ── Section: Settings ── */}
+            <div className="px-3 pt-4 pb-2">
+              <span className="block text-[10px] font-bold tracking-widest uppercase text-[#a0b8d0] px-1 mb-1">
+                Настройки
+              </span>
+              <button
+                onClick={() => setActive({ kind: "base" })}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                  isActive({ kind: "base" })
+                    ? "bg-[#dbeeff] text-[#1a6ebd]"
+                    : "text-[#4a6280] hover:bg-[#f0f7ff]"
+                }`}
+              >
+                <Icon name="Settings2" size={13} />
+                Базовые
+              </button>
+            </div>
 
-            {/* Events list */}
-            {events.map((event, i) => (
-              <div key={event.id} className="group relative">
+            {/* ── Divider ── */}
+            <div className="mx-3 border-t border-[#e8f2fc]" />
+
+            {/* ── Section: Events ── */}
+            <div className="px-3 pt-3 pb-3 flex flex-col flex-1 gap-0.5">
+              <div className="flex items-center justify-between px-1 mb-1">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-[#a0b8d0]">
+                  События
+                </span>
                 <button
-                  onClick={() => setActive({ kind: "event", idx: i })}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors pr-7 ${
-                    isActive({ kind: "event", idx: i })
-                      ? "bg-[#dbeeff] text-[#1a6ebd]"
-                      : "text-[#4a6280] hover:bg-[#f0f7ff]"
-                  }`}
+                  onClick={addEvent}
+                  title="Добавить событие"
+                  className="w-5 h-5 flex items-center justify-center rounded-md text-[#4a9eed] hover:bg-[#dbeeff] transition-colors"
                 >
-                  Событие
-                  {event.actions.length > 0 && (
-                    <span className={`ml-1.5 text-[10px] font-mono px-1 py-0.5 rounded ${
-                      isActive({ kind: "event", idx: i }) ? "bg-[#4a9eed]/20 text-[#1a6ebd]" : "bg-[#e8f2fc] text-[#7fa8c8]"
-                    }`}>
-                      {event.actions.length}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => removeEvent(i)}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] transition-all rounded"
-                >
-                  <Icon name="X" size={10} />
+                  <Icon name="Plus" size={13} />
                 </button>
               </div>
-            ))}
+
+              {events.length === 0 && (
+                <button
+                  onClick={addEvent}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#c5dcf5] text-[12px] text-[#7fa8c8] hover:text-[#4a9eed] hover:border-[#4a9eed] hover:bg-[#f0f7ff] transition-all"
+                >
+                  <Icon name="Plus" size={12} />
+                  Добавить событие
+                </button>
+              )}
+
+              {events.map((event, i) => (
+                <div key={event.id} className="group relative">
+                  <button
+                    onClick={() => setActive({ kind: "event", idx: i })}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors pr-7 ${
+                      isActive({ kind: "event", idx: i })
+                        ? "bg-[#dbeeff] text-[#1a6ebd]"
+                        : "text-[#4a6280] hover:bg-[#f0f7ff]"
+                    }`}
+                  >
+                    <Icon name="Zap" size={12} className="flex-shrink-0 opacity-60" />
+                    <span className="truncate">{eventLabel(event.type)}</span>
+                    {event.actions.length > 0 && (
+                      <span className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                        isActive({ kind: "event", idx: i }) ? "bg-[#4a9eed]/20 text-[#1a6ebd]" : "bg-[#e8f2fc] text-[#7fa8c8]"
+                      }`}>
+                        {event.actions.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => removeEvent(i)}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] transition-all rounded"
+                  >
+                    <Icon name="X" size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Content */}
