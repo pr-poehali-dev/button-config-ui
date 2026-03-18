@@ -504,11 +504,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-[#e8f2fc] flex items-center justify-center p-6 font-sans">
-      {/* Modal */}
-      <div className="w-full max-w-[860px] bg-white rounded-2xl shadow-2xl shadow-[#4a9eed]/10 overflow-hidden flex flex-col">
+      {/* Modal — fixed 900px height */}
+      <div className="w-full max-w-[860px] bg-white rounded-2xl shadow-2xl shadow-[#4a9eed]/10 overflow-hidden flex flex-col" style={{ height: 900 }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-7 py-4 border-b border-[#e8f2fc]">
+        {/* Header — fixed */}
+        <div className="flex-shrink-0 flex items-center justify-between px-7 py-4 border-b border-[#e8f2fc]">
           <h1 className="text-[17px] font-bold text-[#1a2233] tracking-tight">Настройка кнопки</h1>
           <div className="flex items-center gap-2">
             <button className="w-8 h-8 flex items-center justify-center text-[#4a9eed] hover:bg-[#f0f7ff] rounded-lg transition-colors">
@@ -520,11 +520,11 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-1 min-h-0" style={{ minHeight: 480 }}>
+        {/* Body — fills remaining height */}
+        <div className="flex flex-1 min-h-0">
 
-          {/* Sidebar */}
-          <div className="w-[190px] flex-shrink-0 border-r border-[#e8f2fc] flex flex-col">
+          {/* Sidebar — independent scroll */}
+          <div className="w-[190px] flex-shrink-0 border-r border-[#e8f2fc] flex flex-col overflow-y-auto">
 
             {/* ── Section: Settings ── */}
             <div className="px-3 pt-4 pb-2">
@@ -603,7 +603,7 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content — independent scroll */}
           <div className="flex-1 overflow-y-auto px-7 py-6">
             {active.kind === "base" && (
               <ButtonPanel config={btnConfig} onChange={setBtnConfig} />
@@ -618,8 +618,8 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end px-7 py-4 border-t border-[#e8f2fc]">
+        {/* Footer — fixed */}
+        <div className="flex-shrink-0 flex justify-end px-7 py-4 border-t border-[#e8f2fc]">
           <button className="px-6 py-2 bg-[#4a9eed] text-white text-[14px] font-semibold rounded-lg hover:bg-[#3b8fde] transition-colors">
             Сохранить
           </button>
