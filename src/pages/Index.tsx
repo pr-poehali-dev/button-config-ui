@@ -143,44 +143,7 @@ function TrashBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-// ─── Nested action ───────────────────────────────────────────────
 
-function NestedActionRow({ action, index, onChange, onRemove }: {
-  action: NestedAction;
-  index: number;
-  onChange: (a: NestedAction) => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="ml-6 border-l-2 border-[#d1e3f8] pl-4 py-3 animate-[fade-in_0.15s_ease-out]">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] font-semibold text-[#1a2233]">
-          Вложенное действие {index + 1}
-        </span>
-        <TrashBtn onClick={onRemove} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>Тип действия:</Label>
-          <BlueSelect
-            value={action.type}
-            onChange={v => onChange({ ...action, type: v as ActionType })}
-            options={ACTION_TYPES}
-            placeholder="Выберите тип события"
-          />
-        </div>
-        <div>
-          <Label>Методы:</Label>
-          <BlueInput
-            value={action.value}
-            onChange={v => onChange({ ...action, value: v })}
-            placeholder="Поиск значения"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Action block ────────────────────────────────────────────────
 
@@ -190,80 +153,135 @@ function ActionBlock({ action, index, onChange, onRemove }: {
   onChange: (a: Action) => void;
   onRemove: () => void;
 }) {
+  const addNested = () => onChange({
+    ...action,
+    nestedOpen: true,
+    nestedActions: [{ id: uid(), type: "navigate", value: "" }, ...action.nestedActions],
+  });
+
   return (
-    <div className="border border-[#d1e3f8] rounded-xl overflow-hidden bg-white animate-[fade-in_0.15s_ease-out]">
-      {/* Action header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#f0f7ff]">
-        <span className="text-[14px] font-semibold text-[#1a2233]">
-          Действие {index + 1}
-        </span>
-        <div className="flex items-center gap-1">
+    <div className="rounded-xl overflow-hidden border border-[#d1e3f8] bg-white animate-[fade-in_0.15s_ease-out]">
+
+      {/* ── Action header ── */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f0f7ff] border-b border-[#d1e3f8]">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-[#4a9eed] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+            {index + 1}
+          </span>
+          <span className="text-[13px] font-semibold text-[#1a2233]">Действие</span>
+        </div>
+        <TrashBtn onClick={onRemove} />
+      </div>
+
+      {/* ── Action fields ── */}
+      <div className="px-4 py-3 grid grid-cols-2 gap-3">
+        <div>
+          <Label>Тип действия:</Label>
+          <BlueSelect
+            value={action.type}
+            onChange={v => onChange({ ...action, type: v as ActionType })}
+            options={ACTION_TYPES}
+            placeholder="Выберите тип"
+          />
+        </div>
+        <div>
+          <Label>Значение:</Label>
+          <BlueInput
+            value={action.value}
+            onChange={v => onChange({ ...action, value: v })}
+            placeholder="Введите значение"
+          />
+        </div>
+      </div>
+
+      {/* ── Nested zone ── */}
+      <div className="border-t border-dashed border-[#c5dcf5] mx-4 mb-3" />
+
+      <div className="px-4 pb-3">
+        {/* Nested header — always visible */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Icon name="CornerDownRight" size={13} className="text-[#4a9eed]" />
+            <span className="text-[12px] font-semibold text-[#4a6280]">
+              Вложенные действия
+              {action.nestedActions.length > 0 && (
+                <span className="ml-1.5 text-[10px] font-mono bg-[#dbeeff] text-[#1a6ebd] px-1.5 py-0.5 rounded-full">
+                  {action.nestedActions.length}
+                </span>
+              )}
+            </span>
+          </div>
           <button
-            onClick={() => onChange({ ...action, nestedOpen: !action.nestedOpen })}
-            className="w-7 h-7 flex items-center justify-center text-[#4a9eed] hover:bg-[#dbeeff] rounded transition-all"
+            onClick={addNested}
+            className="flex items-center gap-1 text-[11px] font-semibold text-[#4a9eed] hover:text-[#1a6ebd] hover:bg-[#f0f7ff] px-2 py-1 rounded-lg transition-colors"
           >
-            <Icon name={action.nestedOpen ? "ChevronUp" : "ChevronDown"} size={14} />
+            <Icon name="Plus" size={11} />
+            Добавить
           </button>
-          <TrashBtn onClick={onRemove} />
         </div>
-      </div>
 
-      {/* Action fields */}
-      <div className="px-4 py-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Тип действия:</Label>
-            <BlueSelect
-              value={action.type}
-              onChange={v => onChange({ ...action, type: v as ActionType })}
-              options={ACTION_TYPES}
-              placeholder="Выберите тип события"
-            />
-          </div>
-          <div>
-            <Label>Методы:</Label>
-            <BlueInput
-              value={action.value}
-              onChange={v => onChange({ ...action, value: v })}
-              placeholder="Поиск значения"
-            />
-          </div>
-        </div>
-      </div>
+        {/* Empty state */}
+        {action.nestedActions.length === 0 && (
+          <button
+            onClick={addNested}
+            className="w-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-lg border border-dashed border-[#c5dcf5] bg-[#f8fbff] hover:bg-[#f0f7ff] hover:border-[#4a9eed] transition-all group"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#dbeeff] group-hover:bg-[#4a9eed] flex items-center justify-center transition-colors">
+              <Icon name="Plus" size={13} className="text-[#4a9eed] group-hover:text-white" />
+            </div>
+            <span className="text-[12px] text-[#7fa8c8] group-hover:text-[#4a9eed] font-medium transition-colors">
+              Добавить вложенное действие
+            </span>
+          </button>
+        )}
 
-      {/* Nested actions */}
-      {action.nestedOpen && (
-        <div className="border-t border-[#e8f2fc] px-4 pb-3 pt-2 flex flex-col gap-0">
-          <div className="flex items-center justify-between py-1 mb-1">
-            <span className="text-[11px] font-semibold tracking-wide uppercase text-[#7fa8c8]">Вложенные действия</span>
-            <AddActionBtn
-              onClick={() => onChange({
-                ...action,
-                nestedActions: [{ id: uid(), type: "navigate", value: "" }, ...action.nestedActions],
-              })}
-              label="Добавить"
-            />
+        {/* Nested list */}
+        {action.nestedActions.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {action.nestedActions.map((na, i) => (
+              <div
+                key={na.id}
+                className="flex gap-2 items-start pl-3 border-l-2 border-[#c5dcf5] animate-[fade-in_0.15s_ease-out]"
+              >
+                <div className="flex-1 grid grid-cols-2 gap-2 py-1">
+                  <div>
+                    <Label>Тип:</Label>
+                    <BlueSelect
+                      value={na.type}
+                      onChange={v => {
+                        const list = [...action.nestedActions];
+                        list[i] = { ...na, type: v as ActionType };
+                        onChange({ ...action, nestedActions: list });
+                      }}
+                      options={ACTION_TYPES}
+                    />
+                  </div>
+                  <div>
+                    <Label>Значение:</Label>
+                    <BlueInput
+                      value={na.value}
+                      onChange={v => {
+                        const list = [...action.nestedActions];
+                        list[i] = { ...na, value: v };
+                        onChange({ ...action, nestedActions: list });
+                      }}
+                      placeholder="Введите значение"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() =>
+                    onChange({ ...action, nestedActions: action.nestedActions.filter((_, idx) => idx !== i) })
+                  }
+                  className="mt-5 w-6 h-6 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] hover:bg-red-50 rounded transition-all flex-shrink-0"
+                >
+                  <Icon name="X" size={12} />
+                </button>
+              </div>
+            ))}
           </div>
-          {action.nestedActions.map((na, i) => (
-            <NestedActionRow
-              key={na.id}
-              action={na}
-              index={i}
-              onChange={updated => {
-                const list = [...action.nestedActions];
-                list[i] = updated;
-                onChange({ ...action, nestedActions: list });
-              }}
-              onRemove={() =>
-                onChange({ ...action, nestedActions: action.nestedActions.filter((_, idx) => idx !== i) })
-              }
-            />
-          ))}
-          {action.nestedActions.length === 0 && (
-            <p className="text-[12px] text-[#aabfd4] py-2 ml-6">Нет вложенных действий</p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
