@@ -17,6 +17,7 @@ interface Action {
   type: ActionType;
   value: string;
   nestedActions: NestedAction[];
+  nestedOpen: boolean;
 }
 
 interface EventConfig {
@@ -33,19 +34,12 @@ interface ButtonConfig {
   disabled: boolean;
 }
 
-const BUTTON_VARIANTS: { value: ButtonVariant; label: string }[] = [
-  { value: "primary", label: "Primary" },
-  { value: "secondary", label: "Secondary" },
-  { value: "ghost", label: "Ghost" },
-  { value: "danger", label: "Danger" },
-];
-
 const EVENT_TYPES: { value: EventType; label: string }[] = [
-  { value: "click", label: "click" },
-  { value: "hover", label: "hover" },
-  { value: "focus", label: "focus" },
-  { value: "blur", label: "blur" },
-  { value: "dblclick", label: "dblclick" },
+  { value: "click", label: "Клик по элементу" },
+  { value: "hover", label: "Наведение" },
+  { value: "focus", label: "Фокус" },
+  { value: "blur", label: "Потеря фокуса" },
+  { value: "dblclick", label: "Двойной клик" },
 ];
 
 const ACTION_TYPES: { value: ActionType; label: string }[] = [
@@ -55,6 +49,13 @@ const ACTION_TYPES: { value: ActionType; label: string }[] = [
   { value: "submit_form", label: "Отправить форму" },
   { value: "copy", label: "Копировать" },
   { value: "custom", label: "Кастомный" },
+];
+
+const BUTTON_VARIANTS: { value: ButtonVariant; label: string }[] = [
+  { value: "primary", label: "Primary" },
+  { value: "secondary", label: "Secondary" },
+  { value: "ghost", label: "Ghost" },
+  { value: "danger", label: "Danger" },
 ];
 
 const ICON_OPTIONS = [
@@ -67,40 +68,44 @@ function uid() {
   return Math.random().toString(36).slice(2, 8);
 }
 
-function ButtonPreview({ config }: { config: ButtonConfig }) {
-  const variantStyles: Record<ButtonVariant, string> = {
-    primary: "bg-[#0f0f0f] text-white hover:bg-[#2a2a2a]",
-    secondary: "bg-transparent text-[#0f0f0f] border border-[#0f0f0f] hover:bg-[#f0f0f0]",
-    ghost: "bg-transparent text-[#555] hover:bg-[#f5f5f5]",
-    danger: "bg-[#e53e3e] text-white hover:opacity-90",
-  };
+function eventLabel(type: EventType) {
+  return EVENT_TYPES.find(e => e.value === type)?.label ?? type;
+}
 
+// ─── UI primitives ───────────────────────────────────────────────
+
+function Label({ children }: { children: React.ReactNode }) {
   return (
-    <button
-      disabled={config.disabled}
-      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[config.variant]}`}
-    >
-      {config.iconPosition === "left" && config.iconName !== "none" && (
-        <Icon name={config.iconName} size={15} fallback="CircleAlert" />
-      )}
-      {config.label || "Кнопка"}
-      {config.iconPosition === "right" && config.iconName !== "none" && (
-        <Icon name={config.iconName} size={15} fallback="CircleAlert" />
-      )}
-    </button>
+    <span className="block text-[12px] text-[#6b7280] mb-1 font-medium">{children}</span>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function BlueSelect({ value, onChange, options, placeholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+}) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#999]">{label}</label>
-      {children}
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full appearance-none bg-white border border-[#d1e3f8] rounded-lg px-3 py-[9px] text-[13px] text-[#1a2233] focus:outline-none focus:border-[#4a9eed] focus:ring-2 focus:ring-[#4a9eed]/20 transition-all cursor-pointer pr-8"
+      >
+        {placeholder && <option value="" disabled>{placeholder}</option>}
+        {options.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#4a9eed]">
+        <Icon name="ChevronDown" size={14} />
+      </div>
     </div>
   );
 }
 
-function StyledInput({ value, onChange, placeholder }: {
+function BlueInput({ value, onChange, placeholder }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -110,149 +115,140 @@ function StyledInput({ value, onChange, placeholder }: {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-transparent border border-[#e4e4e4] rounded-lg px-3 py-2 text-sm text-[#0f0f0f] placeholder:text-[#ccc] focus:outline-none focus:border-[#0f0f0f] transition-colors"
+      className="w-full bg-white border border-[#d1e3f8] rounded-lg px-3 py-[9px] text-[13px] text-[#1a2233] placeholder:text-[#a0b3c8] focus:outline-none focus:border-[#4a9eed] focus:ring-2 focus:ring-[#4a9eed]/20 transition-all"
     />
   );
 }
 
-function StyledSelect({ value, onChange, options }: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full bg-white border border-[#e4e4e4] rounded-lg px-3 py-2 text-sm text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] transition-colors appearance-none cursor-pointer pr-8"
-      >
-        {options.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#bbb]">
-        <Icon name="ChevronDown" size={12} />
-      </div>
-    </div>
-  );
-}
-
-function AddBtn({ onClick, label }: { onClick: () => void; label: string }) {
+function AddActionBtn({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 text-[12px] font-medium text-[#aaa] hover:text-[#0f0f0f] transition-colors py-1 group"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white bg-[#4a9eed] hover:bg-[#3b8fde] transition-colors"
     >
-      <span className="w-5 h-5 rounded border border-[#e4e4e4] flex items-center justify-center group-hover:border-[#0f0f0f] transition-colors">
-        <Icon name="Plus" size={10} />
-      </span>
+      <Icon name="Plus" size={12} />
       {label}
     </button>
   );
 }
 
-function RemoveBtn({ onClick }: { onClick: () => void }) {
+function TrashBtn({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-[#ccc] hover:text-[#e53e3e] transition-colors rounded"
+      className="w-7 h-7 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] hover:bg-red-50 rounded transition-all"
     >
-      <Icon name="X" size={12} />
+      <Icon name="Trash2" size={14} />
     </button>
   );
 }
 
-function MonoTag({ label }: { label: string }) {
-  return (
-    <span className="font-mono text-[10px] bg-[#f3f3f3] text-[#888] px-1.5 py-0.5 rounded whitespace-nowrap">
-      {label}
-    </span>
-  );
-}
+// ─── Nested action ───────────────────────────────────────────────
 
-function NestedActionRow({
-  action, onChange, onRemove,
-}: {
+function NestedActionRow({ action, index, onChange, onRemove }: {
   action: NestedAction;
+  index: number;
   onChange: (a: NestedAction) => void;
   onRemove: () => void;
 }) {
   return (
-    <div className="flex gap-2 items-center pl-4 animate-[fade-in_0.15s_ease-out]">
-      <div className="text-[#ddd]">
-        <Icon name="CornerDownRight" size={12} />
+    <div className="ml-6 border-l-2 border-[#d1e3f8] pl-4 py-3 animate-[fade-in_0.15s_ease-out]">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[13px] font-semibold text-[#1a2233]">
+          Вложенное действие {index + 1}
+        </span>
+        <TrashBtn onClick={onRemove} />
       </div>
-      <div className="flex-1 grid grid-cols-2 gap-2">
-        <StyledSelect
-          value={action.type}
-          onChange={v => onChange({ ...action, type: v as ActionType })}
-          options={ACTION_TYPES}
-        />
-        <StyledInput
-          value={action.value}
-          onChange={v => onChange({ ...action, value: v })}
-          placeholder="Значение"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Тип действия:</Label>
+          <BlueSelect
+            value={action.type}
+            onChange={v => onChange({ ...action, type: v as ActionType })}
+            options={ACTION_TYPES}
+            placeholder="Выберите тип события"
+          />
+        </div>
+        <div>
+          <Label>Методы:</Label>
+          <BlueInput
+            value={action.value}
+            onChange={v => onChange({ ...action, value: v })}
+            placeholder="Поиск значения"
+          />
+        </div>
       </div>
-      <RemoveBtn onClick={onRemove} />
     </div>
   );
 }
 
-function ActionRow({
-  action, onChange, onRemove,
-}: {
+// ─── Action block ────────────────────────────────────────────────
+
+function ActionBlock({ action, index, onChange, onRemove }: {
   action: Action;
+  index: number;
   onChange: (a: Action) => void;
   onRemove: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="border border-[#eee] rounded-lg overflow-hidden animate-[fade-in_0.15s_ease-out]">
-      <div className="flex items-center gap-2 px-3 py-2 bg-[#fafafa]">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="text-[#ccc] hover:text-[#555] transition-colors flex-shrink-0"
-        >
-          <Icon name={open ? "ChevronDown" : "ChevronRight"} size={13} />
-        </button>
-        <div className="flex-1 grid grid-cols-2 gap-2">
-          <StyledSelect
-            value={action.type}
-            onChange={v => onChange({ ...action, type: v as ActionType })}
-            options={ACTION_TYPES}
-          />
-          <StyledInput
-            value={action.value}
-            onChange={v => onChange({ ...action, value: v })}
-            placeholder="Значение"
-          />
+    <div className="border border-[#d1e3f8] rounded-xl overflow-hidden bg-white animate-[fade-in_0.15s_ease-out]">
+      {/* Action header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[#f0f7ff]">
+        <span className="text-[14px] font-semibold text-[#1a2233]">
+          Действие {index + 1}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onChange({ ...action, nestedOpen: !action.nestedOpen })}
+            className="w-7 h-7 flex items-center justify-center text-[#4a9eed] hover:bg-[#dbeeff] rounded transition-all"
+          >
+            <Icon name={action.nestedOpen ? "ChevronUp" : "ChevronDown"} size={14} />
+          </button>
+          <TrashBtn onClick={onRemove} />
         </div>
-        {action.nestedActions.length > 0 && (
-          <MonoTag label={`${action.nestedActions.length} вложен.`} />
-        )}
-        <RemoveBtn onClick={onRemove} />
       </div>
 
-      {open && (
-        <div className="px-3 pb-3 pt-1.5 flex flex-col gap-2 bg-white">
-          <div className="pl-4">
-            <AddBtn
-              onClick={() =>
-                onChange({
-                  ...action,
-                  nestedActions: [{ id: uid(), type: "navigate", value: "" }, ...action.nestedActions],
-                })
-              }
-              label="Вложенное действие"
+      {/* Action fields */}
+      <div className="px-4 py-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Тип действия:</Label>
+            <BlueSelect
+              value={action.type}
+              onChange={v => onChange({ ...action, type: v as ActionType })}
+              options={ACTION_TYPES}
+              placeholder="Выберите тип события"
+            />
+          </div>
+          <div>
+            <Label>Методы:</Label>
+            <BlueInput
+              value={action.value}
+              onChange={v => onChange({ ...action, value: v })}
+              placeholder="Поиск значения"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Nested actions */}
+      {action.nestedOpen && (
+        <div className="border-t border-[#e8f2fc] px-4 pb-3 pt-2 flex flex-col gap-0">
+          <div className="flex items-center justify-between py-1 mb-1">
+            <span className="text-[11px] font-semibold tracking-wide uppercase text-[#7fa8c8]">Вложенные действия</span>
+            <AddActionBtn
+              onClick={() => onChange({
+                ...action,
+                nestedActions: [{ id: uid(), type: "navigate", value: "" }, ...action.nestedActions],
+              })}
+              label="Добавить"
             />
           </div>
           {action.nestedActions.map((na, i) => (
             <NestedActionRow
               key={na.id}
               action={na}
+              index={i}
               onChange={updated => {
                 const list = [...action.nestedActions];
                 list[i] = updated;
@@ -263,90 +259,186 @@ function ActionRow({
               }
             />
           ))}
+          {action.nestedActions.length === 0 && (
+            <p className="text-[12px] text-[#aabfd4] py-2 ml-6">Нет вложенных действий</p>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function EventRow({
-  event, onChange, onRemove,
-}: {
+// ─── Panel: Event detail ─────────────────────────────────────────
+
+function EventPanel({ event, onChange }: {
   event: EventConfig;
   onChange: (e: EventConfig) => void;
-  onRemove: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="border border-[#e4e4e4] rounded-xl overflow-hidden animate-[fade-in_0.2s_ease-out]">
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#f8f8f8]">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="text-[#ccc] hover:text-[#555] transition-colors flex-shrink-0"
-        >
-          <Icon name={open ? "ChevronDown" : "ChevronRight"} size={14} />
-        </button>
-
-        <div className="flex-1 flex items-center gap-3">
-          <div className="w-40">
-            <StyledSelect
+    <div className="flex flex-col gap-5">
+      {/* Event title + fields */}
+      <div>
+        <h2 className="text-[16px] font-bold text-[#1a2233] mb-4">
+          Событие ({eventLabel(event.type)})
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Тип события:</Label>
+            <BlueSelect
               value={event.type}
               onChange={v => onChange({ ...event, type: v as EventType })}
               options={EVENT_TYPES}
             />
           </div>
-          <span className="font-mono text-[10px] text-[#bbb]">→</span>
-          <MonoTag label={`${event.actions.length} действ.`} />
+          <div>
+            <Label>Область:</Label>
+            <BlueSelect
+              value=""
+              onChange={() => {}}
+              options={[{ value: "area1", label: "area 1" }, { value: "area2", label: "area 2" }]}
+              placeholder="Выберите область"
+            />
+          </div>
         </div>
-
-        <RemoveBtn onClick={onRemove} />
       </div>
 
-      {open && (
-        <div className="p-4 flex flex-col gap-3 bg-white">
-          {event.actions.length === 0 && (
-            <p className="text-[13px] text-[#ccc] text-center py-2">Нет действий</p>
-          )}
-          {event.actions.map((action, i) => (
-            <ActionRow
-              key={action.id}
-              action={action}
-              onChange={updated => {
-                const list = [...event.actions];
-                list[i] = updated;
-                onChange({ ...event, actions: list });
-              }}
-              onRemove={() =>
-                onChange({ ...event, actions: event.actions.filter((_, idx) => idx !== i) })
-              }
-            />
-          ))}
-          <AddBtn
-            onClick={() =>
-              onChange({
-                ...event,
-                actions: [
-                  ...event.actions,
-                  { id: uid(), type: "navigate", value: "", nestedActions: [] },
-                ],
-              })
-            }
+      {/* Actions section */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[15px] font-bold text-[#1a2233]">Действия</h3>
+          <AddActionBtn
+            onClick={() => onChange({
+              ...event,
+              actions: [
+                { id: uid(), type: "navigate", value: "", nestedActions: [], nestedOpen: false },
+                ...event.actions,
+              ],
+            })}
             label="Добавить действие"
           />
         </div>
-      )}
+
+        <div className="flex flex-col gap-3">
+          {event.actions.length === 0 && (
+            <p className="text-[13px] text-[#aabfd4] py-3">Нет действий — добавьте первое</p>
+          )}
+          {event.actions.map((action, ai) => (
+            <ActionBlock
+              key={action.id}
+              action={action}
+              index={ai}
+              onChange={updated => {
+                const list = [...event.actions];
+                list[ai] = updated;
+                onChange({ ...event, actions: list });
+              }}
+              onRemove={() =>
+                onChange({ ...event, actions: event.actions.filter((_, idx) => idx !== ai) })
+              }
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-type TabId = "button" | "events";
+// ─── Panel: Button settings ──────────────────────────────────────
+
+function ButtonPanel({ config, onChange }: {
+  config: ButtonConfig;
+  onChange: (c: ButtonConfig) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-5">
+      <h2 className="text-[16px] font-bold text-[#1a2233]">Базовые настройки</h2>
+
+      <div>
+        <Label>Надпись на кнопке:</Label>
+        <BlueInput
+          value={config.label}
+          onChange={v => onChange({ ...config, label: v })}
+          placeholder="Текст кнопки"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Тип кнопки:</Label>
+          <BlueSelect
+            value={config.variant}
+            onChange={v => onChange({ ...config, variant: v as ButtonVariant })}
+            options={BUTTON_VARIANTS}
+          />
+        </div>
+        <div>
+          <Label>Иконка:</Label>
+          <BlueSelect
+            value={config.iconName}
+            onChange={v => onChange({ ...config, iconName: v })}
+            options={ICON_OPTIONS.map(i => ({ value: i, label: i === "none" ? "— Без иконки" : i }))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Позиция иконки:</Label>
+          <BlueSelect
+            value={config.iconPosition}
+            onChange={v => onChange({ ...config, iconPosition: v as IconPosition })}
+            options={[
+              { value: "left", label: "← Слева" },
+              { value: "right", label: "Справа →" },
+              { value: "none", label: "Без позиции" },
+            ]}
+          />
+        </div>
+        <div>
+          <Label>Состояние:</Label>
+          <BlueSelect
+            value={config.disabled ? "disabled" : "enabled"}
+            onChange={v => onChange({ ...config, disabled: v === "disabled" })}
+            options={[
+              { value: "enabled", label: "Активна" },
+              { value: "disabled", label: "Заблокирована" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="border border-[#d1e3f8] rounded-xl p-6 bg-[#f8fbff] flex items-center justify-center mt-2">
+        <button
+          disabled={config.disabled}
+          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+            config.variant === "primary" ? "bg-[#4a9eed] text-white hover:bg-[#3b8fde]"
+            : config.variant === "secondary" ? "bg-white text-[#4a9eed] border border-[#4a9eed] hover:bg-[#f0f7ff]"
+            : config.variant === "ghost" ? "bg-transparent text-[#4a9eed] hover:bg-[#f0f7ff]"
+            : "bg-[#e53e3e] text-white hover:opacity-90"
+          }`}
+        >
+          {config.iconPosition === "left" && config.iconName !== "none" && (
+            <Icon name={config.iconName} size={15} fallback="CircleAlert" />
+          )}
+          {config.label || "Кнопка"}
+          {config.iconPosition === "right" && config.iconName !== "none" && (
+            <Icon name={config.iconName} size={15} fallback="CircleAlert" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ────────────────────────────────────────────────────────
+
+type SidebarItem =
+  | { kind: "base" }
+  | { kind: "event"; idx: number };
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState<TabId>("button");
-  const [activeEvent, setActiveEvent] = useState(0);
-
-  const [config, setConfig] = useState<ButtonConfig>({
+  const [btnConfig, setBtnConfig] = useState<ButtonConfig>({
     label: "Отправить",
     variant: "primary",
     iconName: "Send",
@@ -360,287 +452,132 @@ export default function Index() {
       type: "click",
       actions: [
         {
-          id: uid(),
-          type: "api_call",
-          value: "/api/submit",
-          nestedActions: [
-            { id: uid(), type: "show_modal", value: "success_modal" },
-          ],
+          id: uid(), type: "api_call", value: "/api/submit",
+          nestedActions: [{ id: uid(), type: "show_modal", value: "success_modal" }],
+          nestedOpen: true,
         },
       ],
     },
   ]);
 
-  const tabs: { id: TabId; label: string; icon: string; count?: number }[] = [
-    { id: "button", label: "Кнопка", icon: "Square" },
-    { id: "events", label: "События", icon: "Zap", count: events.length },
-  ];
+  const [active, setActive] = useState<SidebarItem>({ kind: "base" });
+
+  const addEvent = () => {
+    const newEvent: EventConfig = { id: uid(), type: "click", actions: [] };
+    setEvents(ev => [newEvent, ...ev]);
+    setActive({ kind: "event", idx: 0 });
+  };
+
+  const removeEvent = (idx: number) => {
+    setEvents(ev => ev.filter((_, i) => i !== idx));
+    setActive({ kind: "base" });
+  };
+
+  const updateEvent = (idx: number, updated: EventConfig) => {
+    setEvents(ev => { const l = [...ev]; l[idx] = updated; return l; });
+  };
+
+  const isActive = (item: SidebarItem) => {
+    if (item.kind === "base" && active.kind === "base") return true;
+    if (item.kind === "event" && active.kind === "event" && item.idx === active.idx) return true;
+    return false;
+  };
 
   return (
-    <div className="min-h-screen bg-white text-[#0f0f0f] font-sans">
-      <div className="max-w-[640px] mx-auto px-6 py-14">
+    <div className="min-h-screen bg-[#e8f2fc] flex items-center justify-center p-6 font-sans">
+      {/* Modal */}
+      <div className="w-full max-w-[860px] bg-white rounded-2xl shadow-2xl shadow-[#4a9eed]/10 overflow-hidden flex flex-col">
 
         {/* Header */}
-        <div className="mb-10">
-          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#bbb] mb-2">
-            Конфигуратор
-          </p>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[#0f0f0f]">
-            Настройка кнопки
-          </h1>
+        <div className="flex items-center justify-between px-7 py-4 border-b border-[#e8f2fc]">
+          <h1 className="text-[17px] font-bold text-[#1a2233] tracking-tight">Настройка кнопки</h1>
+          <div className="flex items-center gap-2">
+            <button className="w-8 h-8 flex items-center justify-center text-[#4a9eed] hover:bg-[#f0f7ff] rounded-lg transition-colors">
+              <Icon name="Save" size={16} />
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] hover:bg-red-50 rounded-lg transition-colors">
+              <Icon name="X" size={16} />
+            </button>
+          </div>
         </div>
 
-        {/* Preview */}
-        <div className="mb-10 px-8 py-10 border border-[#f0f0f0] rounded-2xl flex items-center justify-center bg-[#fafafa] min-h-[100px]">
-          <ButtonPreview config={config} />
-        </div>
+        {/* Body */}
+        <div className="flex flex-1 min-h-0" style={{ minHeight: 480 }}>
 
-        {/* Tabs */}
-        <div className="flex gap-0 mb-8 border-b border-[#ebebeb]">
-          {tabs.map(tab => (
+          {/* Sidebar */}
+          <div className="w-[185px] flex-shrink-0 border-r border-[#e8f2fc] py-3 px-2 flex flex-col gap-0.5">
+            {/* Add event button */}
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium border-b-2 transition-all -mb-px ${
-                activeTab === tab.id
-                  ? "border-[#0f0f0f] text-[#0f0f0f]"
-                  : "border-transparent text-[#aaa] hover:text-[#555]"
+              onClick={addEvent}
+              className="flex items-center gap-2 px-3 py-2 mb-1 rounded-lg text-[13px] font-semibold text-white bg-[#4a9eed] hover:bg-[#3b8fde] transition-colors"
+            >
+              <Icon name="Plus" size={13} />
+              Добавить событие
+            </button>
+
+            {/* Base settings */}
+            <button
+              onClick={() => setActive({ kind: "base" })}
+              className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                isActive({ kind: "base" })
+                  ? "bg-[#dbeeff] text-[#1a6ebd]"
+                  : "text-[#4a6280] hover:bg-[#f0f7ff]"
               }`}
             >
-              <Icon name={tab.icon} size={13} />
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                  activeTab === tab.id ? "bg-[#0f0f0f] text-white" : "bg-[#f0f0f0] text-[#999]"
-                }`}>
-                  {tab.count}
-                </span>
-              )}
+              Базовые настройки
             </button>
-          ))}
-        </div>
 
-        {/* Panel: Button */}
-        {activeTab === "button" && (
-          <div className="flex flex-col gap-7 animate-[fade-in_0.2s_ease-out]">
-
-            <Field label="Надпись на кнопке">
-              <StyledInput
-                value={config.label}
-                onChange={v => setConfig(c => ({ ...c, label: v }))}
-                placeholder="Текст кнопки"
-              />
-            </Field>
-
-            <Field label="Тип кнопки">
-              <div className="grid grid-cols-4 gap-2">
-                {BUTTON_VARIANTS.map(v => (
-                  <button
-                    key={v.value}
-                    onClick={() => setConfig(c => ({ ...c, variant: v.value }))}
-                    className={`py-2 rounded-lg text-[13px] font-medium border transition-all ${
-                      config.variant === v.value
-                        ? "border-[#0f0f0f] text-[#0f0f0f] bg-[#f5f5f5]"
-                        : "border-[#e4e4e4] text-[#aaa] hover:border-[#aaa] hover:text-[#555]"
-                    }`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
-            <div className="grid grid-cols-2 gap-6">
-              <Field label="Иконка">
-                <StyledSelect
-                  value={config.iconName}
-                  onChange={v => setConfig(c => ({ ...c, iconName: v }))}
-                  options={ICON_OPTIONS.map(i => ({ value: i, label: i === "none" ? "— Без иконки" : i }))}
-                />
-              </Field>
-
-              <Field label="Позиция иконки">
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(["left", "right", "none"] as IconPosition[]).map(pos => (
-                    <button
-                      key={pos}
-                      onClick={() => setConfig(c => ({ ...c, iconPosition: pos }))}
-                      className={`py-2 rounded-lg text-[12px] font-medium border transition-all ${
-                        config.iconPosition === pos
-                          ? "border-[#0f0f0f] text-[#0f0f0f] bg-[#f5f5f5]"
-                          : "border-[#e4e4e4] text-[#aaa] hover:border-[#aaa]"
-                      }`}
-                    >
-                      {pos === "left" ? "← Лево" : pos === "right" ? "Право →" : "Нет"}
-                    </button>
-                  ))}
-                </div>
-              </Field>
-            </div>
-
-            <div className="flex items-center justify-between py-4 border-t border-[#f0f0f0]">
-              <div>
-                <p className="text-sm text-[#333]">Заблокирована</p>
-                <p className="text-[12px] text-[#bbb] mt-0.5">Кнопка недоступна для нажатия</p>
-              </div>
-              <button
-                onClick={() => setConfig(c => ({ ...c, disabled: !c.disabled }))}
-                className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                  config.disabled ? "bg-[#0f0f0f]" : "bg-[#e4e4e4]"
-                }`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                  config.disabled ? "translate-x-5" : ""
-                }`} />
-              </button>
-            </div>
-
-          </div>
-        )}
-
-        {/* Panel: Events */}
-        {activeTab === "events" && (
-          <div className="flex gap-4 animate-[fade-in_0.2s_ease-out]" style={{ minHeight: 320 }}>
-
-            {/* Sidebar: event list */}
-            <div className="flex flex-col gap-1 w-44 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setEvents(ev => [{ id: uid(), type: "click", actions: [] }, ...ev]);
-                  setActiveEvent(0);
-                }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] text-[#aaa] hover:text-[#0f0f0f] hover:bg-[#f5f5f5] transition-all mb-1 group"
-              >
-                <span className="w-4 h-4 rounded border border-[#e4e4e4] flex items-center justify-center group-hover:border-[#0f0f0f] transition-colors">
-                  <Icon name="Plus" size={9} />
-                </span>
-                Событие
-              </button>
-
-              {events.map((event, i) => (
+            {/* Events list */}
+            {events.map((event, i) => (
+              <div key={event.id} className="group relative">
                 <button
-                  key={event.id}
-                  onClick={() => setActiveEvent(i)}
-                  className={`group flex items-center justify-between px-3 py-2 rounded-lg text-left text-[13px] transition-all ${
-                    activeEvent === i
-                      ? "bg-[#0f0f0f] text-white"
-                      : "text-[#555] hover:bg-[#f5f5f5]"
+                  onClick={() => setActive({ kind: "event", idx: i })}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors pr-7 ${
+                    isActive({ kind: "event", idx: i })
+                      ? "bg-[#dbeeff] text-[#1a6ebd]"
+                      : "text-[#4a6280] hover:bg-[#f0f7ff]"
                   }`}
                 >
-                  <span className="font-mono">{event.type}</span>
-                  <div className="flex items-center gap-1.5">
-                    {event.actions.length > 0 && (
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        activeEvent === i ? "bg-white/20 text-white" : "bg-[#f0f0f0] text-[#999]"
-                      }`}>
-                        {event.actions.length}
-                      </span>
-                    )}
-                    <span
-                      onClick={e => {
-                        e.stopPropagation();
-                        const next = events.filter((_, idx) => idx !== i);
-                        setEvents(next);
-                        setActiveEvent(Math.min(activeEvent, next.length - 1));
-                      }}
-                      className={`opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${
-                        activeEvent === i ? "text-white/50 hover:text-white" : "text-[#ccc] hover:text-[#e53e3e]"
-                      }`}
-                    >
-                      <Icon name="X" size={11} />
+                  Событие
+                  {event.actions.length > 0 && (
+                    <span className={`ml-1.5 text-[10px] font-mono px-1 py-0.5 rounded ${
+                      isActive({ kind: "event", idx: i }) ? "bg-[#4a9eed]/20 text-[#1a6ebd]" : "bg-[#e8f2fc] text-[#7fa8c8]"
+                    }`}>
+                      {event.actions.length}
                     </span>
-                  </div>
+                  )}
                 </button>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="w-px bg-[#ebebeb] flex-shrink-0" />
-
-            {/* Detail: selected event */}
-            <div className="flex-1 min-w-0">
-              {events.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-                  <p className="text-[#ccc] text-sm">Нет событий</p>
-                  <p className="text-[#ddd] text-[12px] mt-1">Добавьте первое слева</p>
-                </div>
-              ) : events[activeEvent] ? (
-                <div className="flex flex-col gap-4 animate-[fade-in_0.15s_ease-out]" key={events[activeEvent].id}>
-
-                  {/* Event type selector */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Field label="Тип события">
-                        <StyledSelect
-                          value={events[activeEvent].type}
-                          onChange={v => {
-                            const list = [...events];
-                            list[activeEvent] = { ...list[activeEvent], type: v as EventType };
-                            setEvents(list);
-                          }}
-                          options={EVENT_TYPES}
-                        />
-                      </Field>
-                    </div>
-                    <div className="mt-5">
-                      <MonoTag label={`${events[activeEvent].actions.length} действ.`} />
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#bbb]">Действия</span>
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-3">
-                    <AddBtn
-                      onClick={() => {
-                        const list = [...events];
-                        list[activeEvent] = {
-                          ...list[activeEvent],
-                          actions: [
-                            { id: uid(), type: "navigate", value: "", nestedActions: [] },
-                            ...list[activeEvent].actions,
-                          ],
-                        };
-                        setEvents(list);
-                      }}
-                      label="Добавить действие"
-                    />
-                    {events[activeEvent].actions.length === 0 && (
-                      <p className="text-[12px] text-[#ccc] py-1">Нет действий</p>
-                    )}
-                    {events[activeEvent].actions.map((action, ai) => (
-                      <ActionRow
-                        key={action.id}
-                        action={action}
-                        onChange={updated => {
-                          const list = [...events];
-                          const actions = [...list[activeEvent].actions];
-                          actions[ai] = updated;
-                          list[activeEvent] = { ...list[activeEvent], actions };
-                          setEvents(list);
-                        }}
-                        onRemove={() => {
-                          const list = [...events];
-                          list[activeEvent] = {
-                            ...list[activeEvent],
-                            actions: list[activeEvent].actions.filter((_, idx) => idx !== ai),
-                          };
-                          setEvents(list);
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                </div>
-              ) : null}
-            </div>
-
+                <button
+                  onClick={() => removeEvent(i)}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] transition-all rounded"
+                >
+                  <Icon name="X" size={10} />
+                </button>
+              </div>
+            ))}
           </div>
-        )}
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-7 py-6">
+            {active.kind === "base" && (
+              <ButtonPanel config={btnConfig} onChange={setBtnConfig} />
+            )}
+            {active.kind === "event" && events[active.idx] && (
+              <EventPanel
+                key={events[active.idx].id}
+                event={events[active.idx]}
+                onChange={updated => updateEvent(active.idx, updated)}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end px-7 py-4 border-t border-[#e8f2fc]">
+          <button className="px-6 py-2 bg-[#4a9eed] text-white text-[14px] font-semibold rounded-lg hover:bg-[#3b8fde] transition-colors">
+            Сохранить
+          </button>
+        </div>
 
       </div>
     </div>
