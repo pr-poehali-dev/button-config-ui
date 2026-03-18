@@ -195,42 +195,43 @@ function ActionBlock({ action, index, onChange, onRemove }: {
       </div>
 
       {/* ── Nested zone ── */}
-      <div className="border-t border-dashed border-[#c5dcf5] mx-4 mb-3" />
+      <div className="bg-[#f4faff] border-t border-[#d1e3f8] px-4 py-3">
 
-      <div className="px-4 pb-3">
-        {/* Nested header — always visible */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Header row — label + counter. Add button only when items exist */}
+        <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5">
-            <Icon name="CornerDownRight" size={13} className="text-[#4a9eed]" />
+            <Icon name="CornerDownRight" size={13} />
             <span className="text-[12px] font-semibold text-[#4a6280]">
-              Вложенные действия
-              {action.nestedActions.length > 0 && (
-                <span className="ml-1.5 text-[10px] font-mono bg-[#dbeeff] text-[#1a6ebd] px-1.5 py-0.5 rounded-full">
-                  {action.nestedActions.length}
-                </span>
-              )}
+              При успехе
             </span>
+            {action.nestedActions.length > 0 && (
+              <span className="text-[10px] font-mono bg-[#dbeeff] text-[#1a6ebd] px-1.5 py-0.5 rounded-full">
+                {action.nestedActions.length}
+              </span>
+            )}
           </div>
-          <button
-            onClick={addNested}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#4a9eed] hover:text-[#1a6ebd] hover:bg-[#f0f7ff] px-2 py-1 rounded-lg transition-colors"
-          >
-            <Icon name="Plus" size={11} />
-            Добавить
-          </button>
+          {action.nestedActions.length > 0 && (
+            <button
+              onClick={addNested}
+              className="flex items-center gap-1 text-[11px] font-semibold text-[#4a9eed] hover:text-[#1a6ebd] hover:bg-[#dbeeff] px-2 py-1 rounded-lg transition-colors"
+            >
+              <Icon name="Plus" size={11} />
+              Добавить
+            </button>
+          )}
         </div>
 
-        {/* Empty state */}
+        {/* Empty state — single CTA */}
         {action.nestedActions.length === 0 && (
           <button
             onClick={addNested}
-            className="w-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-lg border border-dashed border-[#c5dcf5] bg-[#f8fbff] hover:bg-[#f0f7ff] hover:border-[#4a9eed] transition-all group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-[#b8d8f5] bg-white hover:bg-[#f0f7ff] hover:border-[#4a9eed] transition-all group"
           >
-            <div className="w-7 h-7 rounded-full bg-[#dbeeff] group-hover:bg-[#4a9eed] flex items-center justify-center transition-colors">
-              <Icon name="Plus" size={13} className="text-[#4a9eed] group-hover:text-white" />
-            </div>
-            <span className="text-[12px] text-[#7fa8c8] group-hover:text-[#4a9eed] font-medium transition-colors">
-              Добавить вложенное действие
+            <span className="w-6 h-6 rounded-full bg-[#dbeeff] group-hover:bg-[#4a9eed] flex items-center justify-center transition-colors flex-shrink-0">
+              <Icon name="Plus" size={11} className="text-[#4a9eed] group-hover:text-white" />
+            </span>
+            <span className="text-[12px] text-[#7fa8c8] group-hover:text-[#4a9eed] font-medium transition-colors text-left">
+              Добавить действие, которое выполнится при успехе
             </span>
           </button>
         )}
@@ -241,9 +242,9 @@ function ActionBlock({ action, index, onChange, onRemove }: {
             {action.nestedActions.map((na, i) => (
               <div
                 key={na.id}
-                className="flex gap-2 items-start pl-3 border-l-2 border-[#c5dcf5] animate-[fade-in_0.15s_ease-out]"
+                className="flex gap-2 items-start pl-3 border-l-2 border-[#4a9eed]/30 animate-[fade-in_0.15s_ease-out]"
               >
-                <div className="flex-1 grid grid-cols-2 gap-2 py-1">
+                <div className="flex-1 bg-white rounded-lg border border-[#d1e3f8] px-3 py-2.5 grid grid-cols-2 gap-2">
                   <div>
                     <Label>Тип:</Label>
                     <BlueSelect
@@ -273,7 +274,7 @@ function ActionBlock({ action, index, onChange, onRemove }: {
                   onClick={() =>
                     onChange({ ...action, nestedActions: action.nestedActions.filter((_, idx) => idx !== i) })
                   }
-                  className="mt-5 w-6 h-6 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] hover:bg-red-50 rounded transition-all flex-shrink-0"
+                  className="mt-1 w-6 h-6 flex items-center justify-center text-[#b0c4d8] hover:text-[#e53e3e] hover:bg-red-50 rounded transition-all flex-shrink-0"
                 >
                   <Icon name="X" size={12} />
                 </button>
