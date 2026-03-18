@@ -238,6 +238,17 @@ function ActionRow({
 
       {open && (
         <div className="px-3 pb-3 pt-1.5 flex flex-col gap-2 bg-white">
+          <div className="pl-4">
+            <AddBtn
+              onClick={() =>
+                onChange({
+                  ...action,
+                  nestedActions: [{ id: uid(), type: "navigate", value: "" }, ...action.nestedActions],
+                })
+              }
+              label="Вложенное действие"
+            />
+          </div>
           {action.nestedActions.map((na, i) => (
             <NestedActionRow
               key={na.id}
@@ -252,17 +263,6 @@ function ActionRow({
               }
             />
           ))}
-          <div className="pl-4">
-            <AddBtn
-              onClick={() =>
-                onChange({
-                  ...action,
-                  nestedActions: [...action.nestedActions, { id: uid(), type: "navigate", value: "" }],
-                })
-              }
-              label="Вложенное действие"
-            />
-          </div>
         </div>
       )}
     </div>
@@ -504,6 +504,19 @@ export default function Index() {
 
             {/* Sidebar: event list */}
             <div className="flex flex-col gap-1 w-44 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setEvents(ev => [{ id: uid(), type: "click", actions: [] }, ...ev]);
+                  setActiveEvent(0);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] text-[#aaa] hover:text-[#0f0f0f] hover:bg-[#f5f5f5] transition-all mb-1 group"
+              >
+                <span className="w-4 h-4 rounded border border-[#e4e4e4] flex items-center justify-center group-hover:border-[#0f0f0f] transition-colors">
+                  <Icon name="Plus" size={9} />
+                </span>
+                Событие
+              </button>
+
               {events.map((event, i) => (
                 <button
                   key={event.id}
@@ -539,20 +552,6 @@ export default function Index() {
                   </div>
                 </button>
               ))}
-
-              <button
-                onClick={() => {
-                  const newIdx = events.length;
-                  setEvents(ev => [...ev, { id: uid(), type: "click", actions: [] }]);
-                  setActiveEvent(newIdx);
-                }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] text-[#aaa] hover:text-[#0f0f0f] hover:bg-[#f5f5f5] transition-all mt-1 group"
-              >
-                <span className="w-4 h-4 rounded border border-[#e4e4e4] flex items-center justify-center group-hover:border-[#0f0f0f] transition-colors">
-                  <Icon name="Plus" size={9} />
-                </span>
-                Событие
-              </button>
             </div>
 
             {/* Divider */}
@@ -596,6 +595,20 @@ export default function Index() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-3">
+                    <AddBtn
+                      onClick={() => {
+                        const list = [...events];
+                        list[activeEvent] = {
+                          ...list[activeEvent],
+                          actions: [
+                            { id: uid(), type: "navigate", value: "", nestedActions: [] },
+                            ...list[activeEvent].actions,
+                          ],
+                        };
+                        setEvents(list);
+                      }}
+                      label="Добавить действие"
+                    />
                     {events[activeEvent].actions.length === 0 && (
                       <p className="text-[12px] text-[#ccc] py-1">Нет действий</p>
                     )}
@@ -620,20 +633,6 @@ export default function Index() {
                         }}
                       />
                     ))}
-                    <AddBtn
-                      onClick={() => {
-                        const list = [...events];
-                        list[activeEvent] = {
-                          ...list[activeEvent],
-                          actions: [
-                            ...list[activeEvent].actions,
-                            { id: uid(), type: "navigate", value: "", nestedActions: [] },
-                          ],
-                        };
-                        setEvents(list);
-                      }}
-                      label="Добавить действие"
-                    />
                   </div>
 
                 </div>
