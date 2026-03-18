@@ -344,6 +344,7 @@ type TabId = "button" | "events";
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState<TabId>("button");
+  const [activeEvent, setActiveEvent] = useState(0);
 
   const [config, setConfig] = useState<ButtonConfig>({
     label: "Отправить",
@@ -499,27 +500,146 @@ export default function Index() {
 
         {/* Panel: Events */}
         {activeTab === "events" && (
-          <div className="flex flex-col gap-4 animate-[fade-in_0.2s_ease-out]">
-            {events.length === 0 && (
-              <div className="text-center py-14 text-[#ccc] text-sm">
-                Нет событий — добавьте первое
-              </div>
-            )}
-            {events.map((event, i) => (
-              <EventRow
-                key={event.id}
-                event={event}
-                onChange={updated => {
-                  const list = [...events];
-                  list[i] = updated;
-                  setEvents(list);
+          <div className="flex gap-4 animate-[fade-in_0.2s_ease-out]" style={{ minHeight: 320 }}>
+
+            {/* Sidebar: event list */}
+            <div className="flex flex-col gap-1 w-44 flex-shrink-0">
+              {events.map((event, i) => (
+                <button
+                  key={event.id}
+                  onClick={() => setActiveEvent(i)}
+                  className={`group flex items-center justify-between px-3 py-2 rounded-lg text-left text-[13px] transition-all ${
+                    activeEvent === i
+                      ? "bg-[#0f0f0f] text-white"
+                      : "text-[#555] hover:bg-[#f5f5f5]"
+                  }`}
+                >
+                  <span className="font-mono">{event.type}</span>
+                  <div className="flex items-center gap-1.5">
+                    {event.actions.length > 0 && (
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        activeEvent === i ? "bg-white/20 text-white" : "bg-[#f0f0f0] text-[#999]"
+                      }`}>
+                        {event.actions.length}
+                      </span>
+                    )}
+                    <span
+                      onClick={e => {
+                        e.stopPropagation();
+                        const next = events.filter((_, idx) => idx !== i);
+                        setEvents(next);
+                        setActiveEvent(Math.min(activeEvent, next.length - 1));
+                      }}
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${
+                        activeEvent === i ? "text-white/50 hover:text-white" : "text-[#ccc] hover:text-[#e53e3e]"
+                      }`}
+                    >
+                      <Icon name="X" size={11} />
+                    </span>
+                  </div>
+                </button>
+              ))}
+
+              <button
+                onClick={() => {
+                  const newIdx = events.length;
+                  setEvents(ev => [...ev, { id: uid(), type: "click", actions: [] }]);
+                  setActiveEvent(newIdx);
                 }}
-                onRemove={() => setEvents(ev => ev.filter((_, idx) => idx !== i))}
-              />
-            ))}
-            <div className="pt-1">
-              <AddBtn onClick={() => setEvents(ev => [...ev, { id: uid(), type: "click", actions: [] }])} label="Добавить событие" />
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] text-[#aaa] hover:text-[#0f0f0f] hover:bg-[#f5f5f5] transition-all mt-1 group"
+              >
+                <span className="w-4 h-4 rounded border border-[#e4e4e4] flex items-center justify-center group-hover:border-[#0f0f0f] transition-colors">
+                  <Icon name="Plus" size={9} />
+                </span>
+                Событие
+              </button>
             </div>
+
+            {/* Divider */}
+            <div className="w-px bg-[#ebebeb] flex-shrink-0" />
+
+            {/* Detail: selected event */}
+            <div className="flex-1 min-w-0">
+              {events.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-10 text-center">
+                  <p className="text-[#ccc] text-sm">Нет событий</p>
+                  <p className="text-[#ddd] text-[12px] mt-1">Добавьте первое слева</p>
+                </div>
+              ) : events[activeEvent] ? (
+                <div className="flex flex-col gap-4 animate-[fade-in_0.15s_ease-out]" key={events[activeEvent].id}>
+
+                  {/* Event type selector */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Field label="Тип события">
+                        <StyledSelect
+                          value={events[activeEvent].type}
+                          onChange={v => {
+                            const list = [...events];
+                            list[activeEvent] = { ...list[activeEvent], type: v as EventType };
+                            setEvents(list);
+                          }}
+                          options={EVENT_TYPES}
+                        />
+                      </Field>
+                    </div>
+                    <div className="mt-5">
+                      <MonoTag label={`${events[activeEvent].actions.length} действ.`} />
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#bbb]">Действия</span>
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3">
+                    {events[activeEvent].actions.length === 0 && (
+                      <p className="text-[12px] text-[#ccc] py-1">Нет действий</p>
+                    )}
+                    {events[activeEvent].actions.map((action, ai) => (
+                      <ActionRow
+                        key={action.id}
+                        action={action}
+                        onChange={updated => {
+                          const list = [...events];
+                          const actions = [...list[activeEvent].actions];
+                          actions[ai] = updated;
+                          list[activeEvent] = { ...list[activeEvent], actions };
+                          setEvents(list);
+                        }}
+                        onRemove={() => {
+                          const list = [...events];
+                          list[activeEvent] = {
+                            ...list[activeEvent],
+                            actions: list[activeEvent].actions.filter((_, idx) => idx !== ai),
+                          };
+                          setEvents(list);
+                        }}
+                      />
+                    ))}
+                    <AddBtn
+                      onClick={() => {
+                        const list = [...events];
+                        list[activeEvent] = {
+                          ...list[activeEvent],
+                          actions: [
+                            ...list[activeEvent].actions,
+                            { id: uid(), type: "navigate", value: "", nestedActions: [] },
+                          ],
+                        };
+                        setEvents(list);
+                      }}
+                      label="Добавить действие"
+                    />
+                  </div>
+
+                </div>
+              ) : null}
+            </div>
+
           </div>
         )}
 
